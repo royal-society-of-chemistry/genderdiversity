@@ -1,0 +1,293 @@
+---
+title: "Plot Barcharts from Is there a gender bias in Chemical Sciences publishing?"
+output:
+  
+  html_document:
+    df_print: paged
+  pdf_document: default
+  word_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+```
+
+by RSC Data Science
+
+##Is there a gender bias in Chemical Sciences publishing?
+###R Notebook showing example code
+
+```{r echo=FALSE,include=FALSE,warning=FALSE,message=FALSE, cache=FALSE}
+library(ggplot2)
+library(data.table)
+library(forcats)
+library(reshape2)
+library(plyr)
+library(knitr)
+library(weights)
+library(effects)
+library(vcd)
+library(nnet)
+
+source('./genderDiversitysharedfunctions.R')
+source('./genderAssignmentByName.R')
+
+```
+
+###Example 1: Running gender assignment code
+
+Code is in ./genderAssignmentByName.R
+```{r echo=FALSE,warning=FALSE,message=FALSE}
+inputdf = read.csv("data/fileWithNameInIt.csv")
+inferredGender<-assignGenderToVector( inputdf$firstname)
+inputdf$gender <-inferredGender$GENDER
+kable(inputdf)
+
+```
+
+###Example 2: Basic bar chart with significance bars, and baseline
+```{r echo=FALSE,warning=FALSE,message=FALSE}
+
+inputdf = read.csv("data/s1_authorrevieweraverages.csv", fileEncoding="UTF-8-BOM")
+
+#important that this is set correctly
+baseFemalePercentage <-getvaluefromdf("s1_baselines","Level","All authors","FemalePercentage")
+
+inputdf$Level <- factor(inputdf$Level, levels = inputdf[,"Level"])
+inputdf<-addTotalAndPercentageColumnsToDF(inputdf)
+inputdf<-calculateBinomialsDF(inputdf,baseFemalePercentage)
+
+baseFemaleProportion <-(baseFemalePercentage/100)
+
+
+totalplotdf<-maketotalplotdf(inputdf)
+
+
+plot<-plotTotalGraph(totalplotdf, baseFemalePercentage,"Number of original submissions","Total number")
+plot + coord_flip()
+
+percentplotdf<-makepercentplotdf(inputdf)
+plot_1_2b <-plotPercentageGraph(percentplotdf, baseFemalePercentage,"Number of original submissions","Percentage", "Corresponding Authors")
+plot_1_2b + coord_flip()
+
+displaytable(inputdf,"Number of original submissions")
+
+```
+
+###Example 3: Running code for determining if difference between weighted averages is significant
+
+
+```{r echo=FALSE,warning=FALSE,message=FALSE}
+
+inputdf = read.csv("data/s2_CorrespondingAuthorVsNoSubmissions.csv", fileEncoding="UTF-8-BOM")
+femaleMean <- weighted.mean(inputdf$Level,inputdf$Female)
+maleMean <- weighted.mean(inputdf$Level,inputdf$Male)
+#femaleStdDev <- weighted.
+n_female<-sum(inputdf$Female)
+n_male<-sum(inputdf$Male)
+femaleStandardError<- sqrt(wtd.var(x=inputdf$Level,weights=inputdf$Female))/sqrt(n_female)
+maleStandardError<- sqrt(wtd.var(inputdf$Level,inputdf$Male))/sqrt(n_male)
+ttestresults<-wtd.t.test(inputdf$Level, y=inputdf$Level, weight=inputdf$Female, weighty=inputdf$Male)
+
+```
+wtd.t.test function from weights library can calculate weighted means for female and male e.g. Numbers of submissions from file data/s2_CorrespondingAuthorVsNoSubmissions.csv, their weighted standard errors and the significance of the difference between them:
+`r toString(ttestresults) `
+
+* mean for females = `r toString(round(femaleMean,2))`, standard error = `r toString(round(femaleStandardError,3))`, n = `r toString(n_female)`
+* mean for males = `r toString(round(maleMean,2))`, standard error = `r toString(round(maleStandardError,3))`, n = `r toString(n_male)`
+
+###Example 4: Binomial GLM model with one variable
+
+Here is an example of how we ran a binomial glm model with one variable.
+
+For this question we have filtered out:
+
+* instances where the cited corresponding gender is Unknown.
+* instances where the citing corresponding gender is Unknown.
+* instances where the citing corresponding author matches the cited corresponding or first authors
+
+```{r echo=FALSE,warning=FALSE,message=FALSE}
+
+OutcomeName<- "cited.correspondingauthorgender"
+Variable1Name<-"citing.correspondingauthorgender"
+rawdataDF = read.csv("data/RSCCitedToCitingFile.csv")
+
+inputDF<-rawdataDF[which(rawdataDF$cited.correspondingauthorgender!="U"),]
+inputDF<-inputDF[which(inputDF$citing.correspondingauthorgender!="U"),]
+inputDF<-inputDF[which(inputDF$SelfCitingCorrespondingAuthor!="Self-cited"),]
+
+inputDF$cited.correspondingauthorgender <- factor(inputDF$cited.correspondingauthorgender, levels = c("M","F"))
+
+inputDF$citing.correspondingauthorgender <- factor(inputDF$citing.correspondingauthorgender, levels = c("M","F"))
+
+glm(cited.correspondingauthorgender~citing.correspondingauthorgender,data=inputDF,family = "binomial")->modelToUse1
+summaryoutput1<-summary(modelToUse1)
+as.data.table(effect("citing.correspondingauthorgender",data=inputDF,mod=modelToUse1,confidence.level=.8))->effectTable1
+#head(effectTable)
+
+anovasummary<-anova(modelToUse1,test="Chisq")
+PValueForModel<-anovasummary[2,"Pr(>Chi)"]
+SignificanceForModel<-GetSignificanceFromPValue(PValueForModel)
+
+Variable1plot<- ggplot(effectTable1,aes(y=fit,ymin=lower,ymax=upper,x=citing.correspondingauthorgender,group=1))+geom_point()+geom_line()+geom_errorbar(alpha=0.7,width=0.1)+ylab("Proportion of female cited corresponding authors")+xlab("Gender of Citing Corresponding Author")+ggtitle(paste0("Effects on Proportion of Female Citing Corresponding Authors of Cited Corresponding Author Gender"))+theme_bw()
+
+Variable1plot
+```
+
+Figure - Binomial GLM model of cited corresponding author gender of citations and citing corresponding author gender (Model: `r OutcomeName` ~ `r Variable1Name`). ANOVA: `r Variable1Name` is `r toString(SignificanceForModel)` (p = `r toString(PValueForModel)`)
+
+```{r echo=FALSE,warning=FALSE,message=FALSE}
+
+resultsDF<- addPopulationSizeToDataFrame(effectTable1,modelToUse1,"citing.correspondingauthorgender","")
+
+resultsDF <-addPValuesAndSignificanceOneVariable(resultsDF,t(unname(coef(summaryoutput1)[,4])))
+
+
+kable(resultsDF)
+
+```
+
+* From the plot and the figures it can be seen that the Gender of the Citing Corresponding Author does have significant effect on the proportion of female cited corresponding authors - the value for female citing corresponding authors is **`r toString(round(effectTable1[1,"fit"],3))`** and that for male citing corresponding authors is lower at **`r toString(round(effectTable1[2,"fit"],3))`**. 
+
+
+###Example 5: Binomial GLM model with two variables
+
+Here is an example of how we ran a glm model with one variable.
+
+For this question we have filtered out:
+
+* instances where the cited first author gender is Unknown.
+* instances where the citing corresponding author gender is Unknown.
+* instances where the citing first author is the same as the citing corresponding author
+* instances where the citing corresponding author matches the cited corresponding or first authors
+* instances where the citing first author matches the cited corresponding or first authors
+
+```{r echo=FALSE,warning=FALSE,message=FALSE}
+
+Variable1Name<-"citing.correspondingauthorgender"
+Variable2Name<-"citing.firstauthorgender"
+
+inputDF <- rawdataDF[which(rawdataDF$cited.correspondingauthorgender!="U"),]
+
+inputDF <- inputDF[which(inputDF$SameCitingCorrespondingAndFirstAuthor=="False"),]
+
+inputDF <- inputDF[which(inputDF$citing.correspondingauthorgender!="U"),]
+inputDF <- inputDF[which(inputDF$citing.firstauthorgender!="U"),]
+inputDF<-inputDF[which(inputDF$SelfCitingCorrespondingAuthor!="Self-cited"),]
+inputDF<-inputDF[which(inputDF$SelfCitingFirstAuthor!="Self-cited"),]
+
+inputDF$cited.correspondingauthorgender <- factor(inputDF$cited.correspondingauthorgender, levels = c("M","F"))
+
+inputDF$citing.correspondingauthorgender <- factor(inputDF$citing.correspondingauthorgender, levels = c("M","F"))
+
+inputDF$citing.firstauthorgender <- factor(inputDF$citing.firstauthorgender, levels = c("M","F"))
+
+glm(cited.correspondingauthorgender~citing.correspondingauthorgender*citing.firstauthorgender,data=inputDF,family = "binomial")->modelToUse1_2
+summaryoutput1_2<-summary(modelToUse1_2)
+
+anovasummary<-anova(modelToUse1_2,test="Chisq")
+PValueForModel<-anovasummary[4,"Pr(>Chi)"]
+SignificanceForModel<-GetSignificanceFromPValue(PValueForModel)
+
+as.data.table(effect("citing.correspondingauthorgender*citing.firstauthorgender",data=inputDF,mod=modelToUse1_2,confidence.level=.8))->effectTable1_2
+
+resultsDF<- addPopulationSizeToDataFrame(effectTable1_2,modelToUse1_2,Variable1Name,Variable2Name)
+
+resultsDF<-addPValuesAndSignificanceTwoVariables(resultsDF,coef(summaryoutput1_2)[,4],Variable1Name,Variable2Name,levels(resultsDF[[Variable1Name]])[1],levels(resultsDF[[Variable2Name]])[1]) 
+
+ggplot(resultsDF,aes(y=fit,ymin=lower,ymax=upper,x=citing.correspondingauthorgender,group=1))+
+  geom_point()+
+  geom_line()+
+  geom_errorbar(alpha=0.7,width=0.1)+
+  theme(legend.position="bottom",legend.direction="horizontal")+
+  ylab("Proportion of female cited corresponding authors")+
+  xlab("Gender of Citing Corresponding Author")+
+  ggtitle(paste0("Breakdown by citing first author gender in separate plots"))+
+  facet_wrap(~citing.firstauthorgender)+theme_bw()
+
+```
+
+Figure - Binomial GLM model of cited corresponding author gender of citations, citing corresponding author gender and citing first author gender (Model: `r OutcomeName` ~ `r Variable1Name` \* `r Variable2Name`). ANOVA: `r Variable1Name` is `r toString((GetSignificanceFromPValue(anovasummary[2,"Pr(>Chi)"])))` (p = `r toString(anovasummary[2,"Pr(>Chi)"])`); `r Variable2Name` is `r toString(GetSignificanceFromPValue(anovasummary[3,"Pr(>Chi)"]))` (p = `r toString(anovasummary[3,"Pr(>Chi)"])`); `r Variable1Name` \* `r Variable2Name` is `r toString(SignificanceForModel)` (p = `r toString(PValueForModel)`)
+
+```{r echo=FALSE,warning=FALSE,message=FALSE}
+
+kable(resultsDF)
+
+mosaic(~ citing.correspondingauthorgender+citing.firstauthorgender, data = inputDF, labeling = labeling_values,rot_labels=c(0,90,0,0))
+```
+
+###Example 6: Multinomial GLM model with two variables
+
+Here is an example of how we ran a multinomial glm model with two variables.
+
+For these questions we have filtered out:
+
+* instances where the corresponding author gender is Unknown.
+* instances where the reviewer gender is Unknown.
+* instances where the minor decision is "recommend after revision", "recommended after revision" or "revisions required"
+    
+```{r echo=FALSE,warning=FALSE,message=FALSE}
+
+rawdataDF <- read.csv("data/s1_OneRowPerReview.csv")
+rawdataDF<-rawdataDF[which(rawdataDF$DecisionMinor!="recommend after revision"),]
+rawdataDF<-rawdataDF[which(rawdataDF$DecisionMinor!="recommended after revision"),]
+rawdataDF<-rawdataDF[which(rawdataDF$DecisionMinor!="revisions required"),]
+
+
+rawdataDF$DecisionMinor <- factor(rawdataDF$DecisionMinor, levels = c("accept","minor revision","major revision","reject"))
+
+inputDF <- rawdataDF
+inputDF<-inputDF[which(inputDF$CorrespondingAuthorGender!="U"),]
+inputDF<-inputDF[which(inputDF$ReviewerGender!="U"),]
+inputDF$CorrespondingAuthorGender <- factor(inputDF$CorrespondingAuthorGender, levels = c("F","M"))
+inputDF$ReviewerGender <- factor(inputDF$ReviewerGender, levels = c("F","M"))
+
+modelToUse3 <- multinom(DecisionMinor ~ ReviewerGender*CorrespondingAuthorGender, data = inputDF, trace=FALSE)
+
+# need to also fit the model with one variable only for comparison for the chi square test (anova only works on multiple multinom output objects)
+modelToUse2 <- multinom(DecisionMinor ~ ReviewerGender, data = inputDF, trace=FALSE)
+
+anovasummary<-anova(modelToUse3,modelToUse2,test="Chisq")
+PValueForModel<-anovasummary[2,"Pr(Chi)"]
+SignificanceForModel<-GetSignificanceFromPValue(PValueForModel)
+
+effect("ReviewerGender*CorrespondingAuthorGender",data=inputDF,mod=modelToUse3,confidence.level=.95)->rawEffects
+
+resultsDF<- addPopulationSizeToDataFrame(rawEffects,modelToUse3,"ReviewerGender","CorrespondingAuthorGender")
+
+t1<- melt(resultsDF[,c("ReviewerGender","CorrespondingAuthorGender", "prob.accept","prob.minor.revision", "prob.major.revision","prob.reject")], id=c("ReviewerGender","CorrespondingAuthorGender"))
+colnames(t1)<-c("ReviewerGender","CorrespondingAuthorGender","Effect","fit")
+levels(t1$Effect) <- c("accept","minor.revision","major.revision","reject")
+t2<- melt(resultsDF[,c("ReviewerGender","CorrespondingAuthorGender", "L.prob.accept","L.prob.minor.revision", "L.prob.major.revision","L.prob.reject")], id=c("ReviewerGender","CorrespondingAuthorGender"))
+colnames(t2)<-c("ReviewerGender","CorrespondingAuthorGender","Effect","Lower")
+levels(t2$Effect) <- c("accept","minor.revision","major.revision","reject")
+plotableTable<- merge(t1, t2, by = c("ReviewerGender", "CorrespondingAuthorGender","Effect"),all =TRUE)
+
+t3<- melt(resultsDF[,c("ReviewerGender","CorrespondingAuthorGender", "U.prob.accept","U.prob.minor.revision", "U.prob.major.revision","U.prob.reject")], id=c("ReviewerGender","CorrespondingAuthorGender"))
+colnames(t3)<-c("ReviewerGender","CorrespondingAuthorGender","Effect","Upper")
+levels(t3$Effect) <- c("accept","minor.revision","major.revision","reject")
+plotableTable<- merge(plotableTable, t3, by = c("ReviewerGender", "CorrespondingAuthorGender","Effect"),all =TRUE)
+
+t4<- melt(resultsDF[,c("ReviewerGender","CorrespondingAuthorGender", "se.prob.accept","se.prob.minor.revision", "se.prob.major.revision","se.prob.reject")], id=c("ReviewerGender","CorrespondingAuthorGender"))
+colnames(t4)<-c("ReviewerGender","CorrespondingAuthorGender","Effect","SE")
+levels(t4$Effect) <- c("accept","minor.revision","major.revision","reject")
+plotableTable<- merge(plotableTable, t4, by = c("ReviewerGender", "CorrespondingAuthorGender","Effect"),all =TRUE)
+
+ggplot(plotableTable,aes(y=fit,ymin=Lower,ymax=Upper,x=CorrespondingAuthorGender,group=1))+
+  geom_point()+
+  geom_line()+
+  geom_errorbar(alpha=0.7,width=0.1)+
+  theme(legend.position="bottom",legend.direction="horizontal")+
+  ylab("Proportion of reviewer recommendations")+
+  xlab("Gender of corresponding author")+
+  ggtitle(paste0("Breakdown by Reviewer gender in separate row plots"))+
+  facet_grid(vars(ReviewerGender), vars(Effect))+theme_bw()
+
+```
+
+Figure - Multinomial GLM model of reviewer recommendations, corresponding author gender and reviewer gender (female reviewers in top plots and male reviewers in lower plots) (Model: ReviewerRecommendation ~ ReviewerGender \* CorrAuthorGender). ANOVA: ReviewerGender \* CorrespondingAuthorGender is  `r toString(SignificanceForModel)` (p = `r toString(PValueForModel)`)
+
+```{r echo=FALSE,warning=FALSE,message=FALSE}
+
+kable(plotableTable)

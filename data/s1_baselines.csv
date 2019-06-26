@@ -1,0 +1,4 @@
+"Level","Male","Female","Unknown","TotalForLevel","TotalGenderDeduced","FemalePercentage","MalePercentage","LCI","UCI","LCICount","UCICount","Significance","AdjustedPValue"
+"HESA",6145,3110,0,9255,9255,33.6,66.4,32.65,34.57,3021.58,3199.68,"",1
+"UK RSC members",3698,1932,604,6234,5630,34.3,65.7,33.09,35.57,1862.8,2002.4,"",1
+"All authors",199136,111241,327122,637499,310377,35.8,64.2,35.67,36.01,110717.93,111765.15,"Significant",7.94387119950865e-147
