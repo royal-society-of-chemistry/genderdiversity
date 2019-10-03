@@ -147,7 +147,7 @@ maketotalplotdf <- function(dataDF) {
 plotTotalGraph <- function(dataDF, baseFemalePercentage, xtitle, ytitle) {
   dataDF$Gender <- factor(dataDF$Gender, levels = c("Unknown","Male", "Female"))
   plot<- ggplot() +
-    geom_bar(aes(x=XValues, y =YValues, fill = Gender), data=dataDF, stat = "identity") +scale_fill_manual(values=c("#DCDCDC", "#6699cc", "#ff6666"))
+    geom_bar(aes(x=XValues, y =YValues, fill = Gender), data=dataDF, stat = "identity") +scale_fill_manual(values=c("#DCDCDC", "#4BACC6", "#8064A2"))
   plot <- plot +
     scale_x_discrete(limits = rev(levels(droplevels(dataDF$XValues)))) +
     theme(axis.title.x = element_text( size=15), 
@@ -185,7 +185,7 @@ plotPercentageGraph <- function(dataDF, baseFemalePercentage, xtitle, ytitle, ba
   dataDF[which(dataDF$Gender == "Male"),c("Labels")] <- as.character(dataDF[which(dataDF$Gender == "Male"),c("Significance")])
 
   plot<- ggplot() +
-    geom_bar(aes(x=XValues, y =YValues, fill = Gender), data=dataDF, stat = "identity")+scale_fill_manual(values=c("#6699cc", "#ff6666"))
+    geom_bar(aes(x=XValues, y =YValues, fill = Gender), data=dataDF, stat = "identity")+scale_fill_manual(values=c("#4BACC6", "#8064A2"))
   plot <- plot +
     scale_x_discrete(limits = rev(levels(droplevels(dataDF$XValues)))) +
     theme(axis.title.x = element_text( size=15), 
