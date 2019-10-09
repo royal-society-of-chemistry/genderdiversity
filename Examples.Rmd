@@ -26,11 +26,12 @@ library(reshape2)
 library(plyr)
 library(knitr)
 library(weights)
+
 library(effects)
 library(vcd)
 library(nnet)
 
-source('./genderDiversitysharedfunctions.R')
+source('./genderDiversitySharedFunctions.R')
 source('./genderAssignmentByName.R')
 
 ```
