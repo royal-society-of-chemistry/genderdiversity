@@ -29,6 +29,7 @@ library(weights)
 library(effects)
 library(vcd)
 library(nnet)
+library(actuar)
 
 source('./genderDiversitysharedfunctions.R')
 source('./genderAssignmentByName.R')
@@ -81,21 +82,32 @@ displaytable(inputdf,"Number of original submissions")
 ```{r echo=FALSE,warning=FALSE,message=FALSE}
 
 inputdf = read.csv("data/s2_CorrespondingAuthorVsNoSubmissions.csv", fileEncoding="UTF-8-BOM")
-femaleMean <- weighted.mean(inputdf$Level,inputdf$Female)
-maleMean <- weighted.mean(inputdf$Level,inputdf$Male)
-#femaleStdDev <- weighted.
-n_female<-sum(inputdf$Female)
-n_male<-sum(inputdf$Male)
-femaleStandardError<- sqrt(wtd.var(x=inputdf$Level,weights=inputdf$Female))/sqrt(n_female)
-maleStandardError<- sqrt(wtd.var(inputdf$Level,inputdf$Male))/sqrt(n_male)
-ttestresults<-wtd.t.test(inputdf$Level, y=inputdf$Level, weight=inputdf$Female, weighty=inputdf$Male)
+
+#Make list of each Number of Submissions repeated by the number of females to make mean, var and t-test calculations more straightforward without other weighting needed
+expandedfemales <- rep(inputdf$Level, inputdf$Female)
+# and for males
+expandedmales <- rep(inputdf$Level, inputdf$Male)
+
+femaleMean <- mean(expandedfemales)
+maleMean <- mean(expandedmales)
+n_female<-length(expandedfemales)
+n_male<-length(expandedmales)
+femaleStandardError<- sd(expandedfemales)/sqrt(n_female)
+maleStandardError<- sd(expandedmales)/sqrt(n_male)
+ttestresults<-t.test(expandedfemales,expandedmales)
+pvalue<-ttestresults$p.value
+
+significance<-"not significant"
+if (pvalue< 0.05) {
+  significance<-"significant"
+}
 
 ```
-wtd.t.test function from weights library can calculate weighted means for female and male e.g. Numbers of submissions from file data/s2_CorrespondingAuthorVsNoSubmissions.csv, their weighted standard errors and the significance of the difference between them:
-`r toString(ttestresults) `
+mean and sd functions of R base library can be used to calculated means and standard errors for females and males e.g. Numbers of submissions from file data/s2_CorrespondingAuthorVsNoSubmissions.csv, and the t.test function to calculate the p-value to determine if they are significantly different:
 
 * mean for females = `r toString(round(femaleMean,2))`, standard error = `r toString(round(femaleStandardError,3))`, n = `r toString(n_female)`
 * mean for males = `r toString(round(maleMean,2))`, standard error = `r toString(round(maleStandardError,3))`, n = `r toString(n_male)`
+* this difference is `r significance` (two sample t-test, p = `r toString(pvalue)`).
 
 ###Example 4: Binomial GLM model with one variable
 
