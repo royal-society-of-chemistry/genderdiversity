@@ -83,12 +83,11 @@ displaytable(inputdf,"Number of original submissions")
 ```{r echo=FALSE,warning=FALSE,message=FALSE}
 
 inputdf = read.csv("data/s2_CorrespondingAuthorVsNoSubmissions.csv", fileEncoding="UTF-8-BOM")
-
+inputdf<-inputdf[!is.na(inputdf$Level),]
 #Make list of each Number of Submissions repeated by the number of females to make mean, var and t-test calculations more straightforward without other weighting needed
 expandedfemales <- rep(inputdf$Level, inputdf$Female)
 # and for males
 expandedmales <- rep(inputdf$Level, inputdf$Male)
-
 femaleMean <- mean(expandedfemales)
 maleMean <- mean(expandedmales)
 n_female<-length(expandedfemales)
