@@ -82,7 +82,7 @@ displaytable(inputdf,"Number of original submissions")
 
 ```{r echo=FALSE,warning=FALSE,message=FALSE}
 
-inputdf = read.csv("data/s2_CorrespondingAuthorVsNoSubmissions.csv", fileEncoding="UTF-8-BOM")
+inputdf = read.csv("data/s2_CorrAuthorsVsDecisionTime.csv", fileEncoding="UTF-8-BOM")
 inputdf<-inputdf[!is.na(inputdf$Level),]
 #Make list of each Number of Submissions repeated by the number of females to make mean, var and t-test calculations more straightforward without other weighting needed
 expandedfemales <- rep(inputdf$Level, inputdf$Female)
@@ -109,7 +109,31 @@ mean and sd functions of R base library can be used to calculated means and stan
 * mean for males = `r toString(round(maleMean,2))`, standard error = `r toString(round(maleStandardError,3))`, n = `r toString(n_male)`
 * this difference is `r significance` (two sample t-test, p = `r toString(pvalue)`).
 
-###Example 4: Binomial GLM model with one variable
+###Example 4: Running code for determining success rate as a function of gender and chisq test on whether difference is significant
+
+
+```{r echo=FALSE,warning=FALSE,message=FALSE}
+
+inputDF <- read.csv("data/intermediatefiles/s2_CorrespondingAuthorVsPrescreen.csv")
+femalesuccessrate<-100*inputDF[which(inputDF$Level=="Peer reviewed"),"Female"]/sum(inputDF$Female)
+malesuccessrate<-100*inputDF[which(inputDF$Level=="Peer reviewed"),"Male"]/sum(inputDF$Male)
+
+inputDF$Unknown<-NULL
+inputDF$Level<-NULL
+chisq <- chisq.test(inputDF)
+significance<-"not significant"
+if (chisq$p.value< 0.05) {
+  significance<-"significant"
+}
+
+```
+* The success rate of surviving "Rejection without
+peer review" for female first authors is `r toString(round(femalesuccessrate,2))`% and for first author males it is `r toString(round(malesuccessrate,2))`%. This difference is `r significance ` chisq( `r toString(chisq$parameter
+)`, n = `r toString(sum(inputDF))`) = `r toString(round(chisq$statistic["X-squared"]
+,2))`, p = `r toString(chisq$p.value)`)
+
+
+###Example 5: Binomial GLM model with one variable
 
 Here is an example of how we ran a binomial glm model with one variable.
 
@@ -163,7 +187,7 @@ kable(resultsDF)
 * From the plot and the figures it can be seen that the Gender of the Citing Corresponding Author does have significant effect on the proportion of female cited corresponding authors - the value for female citing corresponding authors is **`r toString(round(effectTable1[1,"fit"],3))`** and that for male citing corresponding authors is lower at **`r toString(round(effectTable1[2,"fit"],3))`**. 
 
 
-###Example 5: Binomial GLM model with two variables
+###Example 6: Binomial GLM model with two variables
 
 Here is an example of how we ran a glm model with one variable.
 
@@ -229,7 +253,7 @@ kable(resultsDF)
 mosaic(~ citing.correspondingauthorgender+citing.firstauthorgender, data = inputDF, labeling = labeling_values,rot_labels=c(0,90,0,0))
 ```
 
-###Example 6: Multinomial GLM model with two variables
+###Example 7: Multinomial GLM model with two variables
 
 Here is an example of how we ran a multinomial glm model with two variables.
 
