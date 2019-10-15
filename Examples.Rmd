@@ -128,9 +128,9 @@ if (chisq$p.value< 0.05) {
 
 ```
 * The success rate of surviving "Rejection without
-peer review" for female first authors is `r toString(round(femalesuccessrate,2))`% and for first author males it is `r toString(round(malesuccessrate,2))`%. This difference is `r significance ` chisq( `r toString(chisq$parameter
+peer review" for female corresponding authors is `r toString(round(femalesuccessrate,2))`% and for male corresponding authors it is `r toString(round(malesuccessrate,2))`% (Chisq test of independence of frequency success or not with gender is `r significance ` with chisq( `r toString(chisq$parameter
 )`, n = `r toString(sum(inputDF))`) = `r toString(round(chisq$statistic["X-squared"]
-,2))`, p = `r toString(chisq$p.value)`)
+,2))`, p = `r toString(chisq$p.value)`))
 
 
 ###Example 5: Binomial GLM model with one variable
