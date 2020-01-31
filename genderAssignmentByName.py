@@ -1,4 +1,14 @@
 import pandas as pd
+import argparse
+
+parser = argparse.ArgumentParser()
+parser.add_argument("input")
+parser.add_argument("output")
+parser.add_argument("field")
+args = parser.parse_args()
+print(args.input)
+print(args.output)
+print(args.field)
 
 #Example Python code For assigning Gender From First Names
 
@@ -20,6 +30,6 @@ def assignGenderToVector(inputDF,firstnamecolumnname):
 	rr=rr.drop("CHECKFNAME", axis=1)
 	return rr
 
-inputWithNamedf=pd.read_csv("data/fileWithNameInIt.csv")
-rr = assignGenderToVector(inputWithNamedf,"firstname")
-print(rr)
+inputWithNamedf=pd.read_csv(args.input)
+rr = assignGenderToVector(inputWithNamedf,args.field)
+rr.to_csv(args.output)
