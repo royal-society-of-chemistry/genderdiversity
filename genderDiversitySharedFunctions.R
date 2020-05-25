@@ -102,7 +102,7 @@ calculateBinomialsDF<- function(inputdf, baseFemalePercentage, confidenceLevel=0
       outdf[i,"AdjustedPValue"]=0
       outdf[i,"Significance"]=""
     } else {
-      rr_row<-calculateBinomialProportions(outdf[i,"Female"],outdf[i,"Male"],baseFemalePercentage/100,outdf[i,"TotalGenderDeduced"],0.95)
+      rr_row<-calculateBinomialProportions(as.numeric(outdf[i,"Female"]),as.numeric(outdf[i,"Male"]),baseFemalePercentage/100,outdf[i,"TotalGenderDeduced"],0.95)
       outdf[i,"LCI"]=round(100*rr_row["LowerCI"],2)
       outdf[i,"LCICount"]=round(outdf[i,"Female"]*rr_row["LowerCI"]/rr_row["ActualProportion"],2)
       outdf[i,"UCI"]=round(100*rr_row["UpperCI"],2)
