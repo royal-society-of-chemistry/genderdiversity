@@ -15,8 +15,8 @@ knitr::opts_chunk$set(echo = TRUE)
 
 by RSC Data Science
 
-##Is there a gender bias in Chemical Sciences publishing?
-###R Notebook showing example code
+## Is there a gender bias in Chemical Sciences publishing?
+### R Notebook showing example code
 
 ```{r echo=FALSE,include=FALSE,warning=FALSE,message=FALSE, cache=FALSE}
 library(ggplot2)
@@ -37,7 +37,7 @@ source('./genderAssignmentByName.R')
 
 ```
 
-###Example 1: Running gender assignment code
+### Example 1: Running gender assignment code
 
 Code is in ./genderAssignmentByName.R
 ```{r echo=FALSE,warning=FALSE,message=FALSE}
@@ -48,7 +48,7 @@ kable(inputdf)
 
 ```
 
-###Example 2: Basic bar chart with significance bars, and baseline
+### Example 2: Basic bar chart with significance bars, and baseline
 ```{r echo=FALSE,warning=FALSE,message=FALSE}
 
 inputdf = read.csv("data/s1_authorrevieweraverages.csv", fileEncoding="UTF-8-BOM")
@@ -77,12 +77,12 @@ displaytable(inputdf,"Number of original submissions")
 
 ```
 
-###Example 3: Running code for determining if difference between weighted averages is significant
+### Example 3: Running code for determining if difference between weighted averages is significant
 
 
 ```{r echo=FALSE,warning=FALSE,message=FALSE}
 
-inputdf = read.csv("data/s2_CorrAuthorsVsDecisionTime.csv", fileEncoding="UTF-8-BOM")
+inputdf = read.csv("data/s2_CorrespondingAuthorVsNoSubmissions.csv", fileEncoding="UTF-8-BOM")
 inputdf<-inputdf[!is.na(inputdf$Level),]
 #Make list of each Number of Submissions repeated by the number of females to make mean, var and t-test calculations more straightforward without other weighting needed
 expandedfemales <- rep(inputdf$Level, inputdf$Female)
@@ -109,12 +109,12 @@ mean and sd functions of R base library can be used to calculated means and stan
 * mean for males = `r toString(round(maleMean,2))`, standard error = `r toString(round(maleStandardError,3))`, n = `r toString(n_male)`
 * this difference is `r significance` (two sample t-test, p = `r toString(pvalue)`).
 
-###Example 4: Running code for determining success rate as a function of gender and chisq test on whether difference is significant
+### Example 4: Running code for determining success rate as a function of gender and chisq test on whether difference is significant
 
 
 ```{r echo=FALSE,warning=FALSE,message=FALSE}
 
-inputDF <- read.csv("data/intermediatefiles/s2_CorrespondingAuthorVsPrescreen.csv")
+inputDF <- read.csv("data/s2_CorrespondingAuthorVsPrescreen.csv")
 femalesuccessrate<-100*inputDF[which(inputDF$Level=="Peer reviewed"),"Female"]/sum(inputDF$Female)
 malesuccessrate<-100*inputDF[which(inputDF$Level=="Peer reviewed"),"Male"]/sum(inputDF$Male)
 
@@ -133,7 +133,7 @@ peer review" for female corresponding authors is `r toString(round(femalesuccess
 ,2))`, p = `r toString(chisq$p.value)`))
 
 
-###Example 5: Binomial GLM model with one variable
+### Example 5: Binomial GLM model with one variable
 
 Here is an example of how we ran a binomial glm model with one variable.
 
@@ -187,7 +187,7 @@ kable(resultsDF)
 * From the plot and the figures it can be seen that the Gender of the Citing Corresponding Author does have significant effect on the proportion of female cited corresponding authors - the value for female citing corresponding authors is **`r toString(round(effectTable1[1,"fit"],3))`** and that for male citing corresponding authors is lower at **`r toString(round(effectTable1[2,"fit"],3))`**. 
 
 
-###Example 6: Binomial GLM model with two variables
+### Example 6: Binomial GLM model with two variables
 
 Here is an example of how we ran a glm model with one variable.
 
@@ -253,7 +253,7 @@ kable(resultsDF)
 mosaic(~ citing.correspondingauthorgender+citing.firstauthorgender, data = inputDF, labeling = labeling_values,rot_labels=c(0,90,0,0))
 ```
 
-###Example 7: Multinomial GLM model with two variables
+### Example 7: Multinomial GLM model with two variables
 
 Here is an example of how we ran a multinomial glm model with two variables.
 
