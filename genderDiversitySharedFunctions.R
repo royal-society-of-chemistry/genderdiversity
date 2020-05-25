@@ -135,7 +135,7 @@ addCIandSigColumnsToDF<- function(inputdf, baseFemalePercentage)
 }
 
 maketotalplotdf <- function(dataDF) {
-  totalplotdf<- melt(dataDF[,c("Level","TotalGenderDeduced","Male","Female","Unknown")], id=c("Level","TotalGenderDeduced"))
+  totalplotdf<- reshape2::melt(dataDF[,c("Level","TotalGenderDeduced","Male","Female","Unknown")], id=c("Level","TotalGenderDeduced"))
   names(totalplotdf)[names(totalplotdf) == 'Level'] <- 'XValues'
   names(totalplotdf)[names(totalplotdf) == 'TotalGenderDeduced'] <- 'TotalGenderDeduced'
   names(totalplotdf)[names(totalplotdf) == 'value'] <- 'YValues'
@@ -163,7 +163,7 @@ plotTotalGraph <- function(dataDF, baseFemalePercentage, xtitle, ytitle) {
 
 
 makepercentplotdf <- function(dataDF) {
-  percentplotdf<- melt(dataDF[,c("Level","LCI", "UCI","Significance", "MalePercentage","FemalePercentage")], id=c("Level","LCI", "UCI", "Significance"))
+  percentplotdf<- reshape2::melt(dataDF[,c("Level","LCI", "UCI","Significance", "MalePercentage","FemalePercentage")], id=c("Level","LCI", "UCI", "Significance"))
   
   names(percentplotdf)[names(percentplotdf) == 'Level'] <- 'XValues'
   names(percentplotdf)[names(percentplotdf) == 'value'] <- 'YValues'
