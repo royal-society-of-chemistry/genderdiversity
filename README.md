@@ -1,7 +1,7 @@
 # Is there a gender bias in Chemical Sciences scholarly communication? #
 Here is example code and example data sets (with sensitive information removed) to interrogate publishing data to highlight gender biases.
 
-##Files##
+## Files ##
 * *License.txt* has details about license that this code and data is available under.
 * *Examples.Rmd* is an example R Markdown file which shows examples of:
   * Example 1: Running gender assignment code (using example file *data/fileWithNameInIt.csv*)
@@ -16,7 +16,7 @@ Here is example code and example data sets (with sensitive information removed) 
 * *authorPositionPlot.R* has code for generating plot of distribution of female authors by author position and number of authors
 *assignGenderToVector* is the function which maps first name to gender using the file *data/genderNames.csv*
 * *data* directory contains example data sets for running examples as above and additionally *genderNames.csv* is the data set of first names and gender mappings for  running *assignGenderToVector* function *assignGenderToVector* function (to cross-reference against to output deduced gender)
-##Dependencies##
+## Dependencies ##
 This code was run in RStudio and libraries required to run it are:
 
 * *library(ggplot2)*
